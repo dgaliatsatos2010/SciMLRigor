@@ -1,0 +1,33 @@
+{
+  "version": "1.5.2",
+  "date": "2026-09-15",
+  "tests_passed": 79,
+  "tests_total": 79,
+  "controlled_benchmark": {
+    "n_runs": 60,
+    "injection_recall": 1.0,
+    "detection_recall": 1.0,
+    "localization_accuracy": 1.0,
+    "severity_monotonicity": 0.9598076211353316,
+    "clean_control_alert_rate": 0.25
+  },
+  "tier_a_external": {
+    "n_runs": 10,
+    "n_datasets": 3,
+    "n_completed": 10,
+    "n_errors": 0,
+    "n_not_evaluable": 0,
+    "n_alerts": 7,
+    "n_curated_expectations": 2,
+    "curated_expectation_agreement": 1.0,
+    "evidence_tier_counts": {
+      "A": 10
+    }
+  },
+  "evidence_policy": {
+    "A": "primary source-backed",
+    "B": "separate verified-mirror sensitivity",
+    "C": "protocol/readiness only",
+    "P": "pending/unavailable"
+  }
+}

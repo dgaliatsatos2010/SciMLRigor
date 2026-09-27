@@ -1,0 +1,43 @@
+{
+  "release": "SciMLRigor 1.5.1",
+  "date": "2026-09-15",
+  "automated_tests": {
+    "passed": 76,
+    "total": 76
+  },
+  "controlled_benchmark": {
+    "n_runs": 60,
+    "n_expected_positive": 38,
+    "n_clean_controls": 20,
+    "injection_recall": 1.0,
+    "detection_recall": 1.0,
+    "localization_accuracy": 1.0,
+    "severity_monotonicity": 0.9598076211353316,
+    "clean_control_alert_rate": 0.25
+  },
+  "source_backed_external": {
+    "n_datasets": 3,
+    "n_runs": 10,
+    "n_completed": 10,
+    "n_errors": 0,
+    "n_not_evaluable": 0,
+    "n_alerts": 7,
+    "n_curated_expectations": 2,
+    "curated_expectation_agreement": 1.0,
+    "engine_entrypoint": "scimlrigor.api.audit",
+    "engine_version": "1.5.1"
+  },
+  "source_hashes": {
+    "thessaloniki_rainfall": "19ce28167227c2915d24f26e4701c3598b9532c02bf36ec4f1f3fab5070e429f",
+    "uci_hydraulic": "24128aad2ee45eea7e6b63ebbd9992cdf25d0483a2cebefbfc13bc69079af1f2",
+    "uci_ai4i_2020": "dc6630cd9b1f0f853922fad78a1b6436570d3f1ec863f1dd5c4340ac56bc8a8e"
+  },
+  "v3_protocol_status": {
+    "uci_har": "protocol_validated_source_pending",
+    "uci_arcene": "protocol_validated_source_pending",
+    "uci_bike_sharing": "protocol_validated_source_pending",
+    "nasa_cmapss": "protocol_validated_provider_currently_unavailable",
+    "acs_folktables": "protocol_validated_source_pending"
+  },
+  "claim_boundary": "Only evidence tier A anchors count as source-backed external validation."
+}

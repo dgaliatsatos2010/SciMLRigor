@@ -1,0 +1,27 @@
+{
+  "title": "SciMLRigor: Counterfactual Stress Testing for Rigorous Machine-Learning Evaluation",
+  "description": "Open-source Python framework for counterfactual methodological stress testing of machine-learning evaluation designs, with R01–R10 forensics, Evaluation Optimism Gap (EOG), controlled failure-injection benchmarking, and natural external-anchor validation.",
+  "creators": [
+    {
+      "name": "Galiatsatos, Dimitrios",
+      "affiliation": "Hellenic Open University, Patras, Greece",
+      "orcid": "0009-0005-5232-1425"
+    }
+  ],
+  "license": "MIT",
+  "keywords": [
+    "machine learning",
+    "model evaluation",
+    "cross-validation",
+    "data leakage",
+    "reproducibility",
+    "transportability",
+    "research software",
+    "failure injection",
+    "benchmarking",
+    "methodological forensics"
+  ],
+  "upload_type": "software",
+  "version": "1.5.2",
+  "access_right": "open"
+}

@@ -1,0 +1,35 @@
+include LICENSE
+include README.md
+include CHANGELOG.md
+include CITATION.cff
+include codemeta.json
+include .zenodo.json
+include GITHUB_RELEASE_v1.1.0.md
+include GITHUB_RELEASE_v1.2.0.md
+recursive-include docs *.md
+recursive-include examples *.py
+recursive-include tests *.py
+include VALIDATION_v1.2.0.md
+include R02_R10_UPGRADE_MATRIX.csv
+
+include GITHUB_RELEASE_v1.3.0.md
+include VALIDATION_v1.3.0.md
+recursive-include benchmarks/scimlrigorbench_v1 *.py *.md *.csv
+
+include GITHUB_RELEASE_v1.4.0.md
+include VALIDATION_v1.4.0.md
+recursive-include benchmarks/scimlrigorbench_v2 *
+include GITHUB_RELEASE_v1.5.0.md
+include VALIDATION_v1.5.0.md
+recursive-include benchmarks/scimlrigorbench_v3 *
+recursive-include benchmarks/external_data *.py
+
+include GITHUB_RELEASE_v1.5.1.md
+include VALIDATION_v1.5.1.md
+include RELEASE_STATUS_v1.5.1.json
+global-exclude *.py[cod]
+prune benchmarks/scimlrigorbench_v3/__pycache__
+
+include GITHUB_RELEASE_v1.5.2.md
+include VALIDATION_v1.5.2.md
+include RELEASE_STATUS_v1.5.2.json

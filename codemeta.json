@@ -1,0 +1,26 @@
+{
+  "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+  "name": "SciMLRigor",
+  "description": "Counterfactual methodological stress testing, leakage forensics, and controlled failure-injection and external-anchor benchmarking for machine-learning evaluation.",
+  "version": "1.5.2",
+  "license": "https://spdx.org/licenses/MIT",
+  "programmingLanguage": "Python",
+  "runtimePlatform": "Python >=3.9",
+  "author": {
+    "@type": "Person",
+    "givenName": "Dimitrios",
+    "familyName": "Galiatsatos",
+    "email": "galiatsatos.dimitrios@ac.eap.gr",
+    "@id": "https://orcid.org/0009-0005-5232-1425",
+    "affiliation": "Hellenic Open University, Patras, Greece"
+  },
+  "keywords": [
+    "machine learning",
+    "model evaluation",
+    "cross-validation",
+    "data leakage",
+    "reproducibility",
+    "transportability"
+  ]
+}

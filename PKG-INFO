@@ -1,0 +1,443 @@
+Metadata-Version: 2.4
+Name: scimlrigor
+Version: 1.5.2
+Summary: Counterfactual methodological stress testing and failure-injection benchmarking for machine-learning research.
+Author-email: Dimitrios Galiatsatos <galiatsatos.dimitrios@ac.eap.gr>
+License-Expression: MIT
+Keywords: machine learning,model evaluation,cross-validation,data leakage,reproducibility,transportability
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Science/Research
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy>=1.23
+Requires-Dist: pandas>=1.5
+Requires-Dist: scikit-learn>=1.3
+Provides-Extra: paper
+Requires-Dist: scipy>=1.10; extra == "paper"
+Requires-Dist: matplotlib>=3.7; extra == "paper"
+Requires-Dist: statsmodels>=0.14; extra == "paper"
+Provides-Extra: benchmark
+Requires-Dist: scipy>=1.10; extra == "benchmark"
+Requires-Dist: matplotlib>=3.7; extra == "benchmark"
+Requires-Dist: openpyxl>=3.1; extra == "benchmark"
+Provides-Extra: dev
+Requires-Dist: pytest>=7; extra == "dev"
+Requires-Dist: pytest-cov>=4; extra == "dev"
+Dynamic: license-file
+
+# SciMLRigor
+
+**Version 1.5.2** adds first-class evidence grading to SciMLRigorBench. External result rows now carry evidence tier, provider, source status and reference metadata, while Tier-A source-backed validation remains explicitly separated from Tier-C protocol/fixture readiness. See `VALIDATION_v1.5.2.md`.
+
+**SciMLRigor** is an experimental-integrity stress-testing framework for machine-learning research.
+
+The package is designed to answer a simple question:
+
+> How much of a model's apparent predictive performance survives when the evaluation design is made more rigorous?
+
+Version 1.5.2 provides:
+
+- baseline stratified cross-validation
+- permutation-based empirical null estimation
+- Evaluation Optimism Gap (EOG)
+- null-centered Rigor Survival (RS)
+- R01 pipeline-isolation **and leakage-forensics** stress testing
+- R02 nested selection/tuning **forensics** with parameter-stability and selection-scope diagnostics
+- R03 group-independence **forensics** with group-size, outcome-heterogeneity, and worst-group diagnostics
+- R04 temporal generalization **forensics** with gap/rolling-window, drift, and time-order diagnostics
+- R05 exact + near-duplicate **forensics** with conflicting-target checks
+- R06 global + structure-preserving permutation **forensics** for groups and time series
+- R07 identifier/nuisance **forensics** with joint and per-field shortcut challenges
+- R08 proxy/feature-group **ablation forensics** with per-feature and grouped ablations
+- R09 domain transportability **forensics** with worst-domain, covariate-shift, and pairwise transfer diagnostics
+- R10 classification calibration **and regression reliability forensics** under group/temporal stress
+- structured audit results
+- JSON / DataFrame / Markdown export
+- **SciMLRigorBench** paired-control failure-injection benchmarking across R01–R10
+- **external-anchor validation** with curated structural expectations and natural forensic findings
+- **composite target-reconstruction forensics** for multi-column leakage patterns
+- **group-aware temporal/nested evaluation** for panel and longitudinal local clocks
+
+## Quick start
+
+The recommended 1.x API is the one-call interface:
+
+```python
+from scimlrigor import audit
+
+report = audit(
+    X,
+    y,
+    estimator=model,
+    groups=subject_id,
+    time=observation_date,
+    domains=site,
+)
+
+print(report.summary())
+```
+
+`RigorAudit` remains available for stepwise workflows.
+
+
+```python
+from sklearn.datasets import make_classification
+from sklearn.linear_model import LogisticRegression
+from scimlrigor import RigorAudit
+
+X, y = make_classification(
+    n_samples=500,
+    n_features=20,
+    random_state=42
+)
+
+groups = [i // 2 for i in range(len(y))]
+
+audit = RigorAudit(
+    estimator=LogisticRegression(max_iter=2000),
+    scoring="roc_auc",
+    cv=5,
+    random_state=42,
+    n_permutations=100
+)
+
+audit.fit(X, y, groups=groups)
+report = audit.run()
+
+print(report.summary())
+```
+
+
+## Leakage forensics (new in 1.1.0)
+
+R01 now runs a composite leakage audit rather than checking preprocessing isolation alone.
+It adds four complementary checks:
+
+- **R01a Preprocessing Isolation** — compares globally fitted preprocessing with fold-contained preprocessing when a preprocessor is supplied.
+- **R01b Feature Lineage** — requires auditable provenance for declared engineered/precomputed features.
+- **R01c Target-Derived Feature Challenge** — automatically probes for direct label copies, deterministic target transforms, future-target leads, and common current-target formulas such as normalized target changes based on rolling history.
+- **R01d Prediction-Time Availability** — flags predictors that are not available at the stated forecasting horizon.
+
+A standalone leakage scan is available without fitting a model:
+
+```python
+from scimlrigor import leakage_scan
+
+scan = leakage_scan(
+    X,
+    y,
+    time=observation_date,
+    groups=subject_id,
+    engineered_features=["Pvar"],
+    feature_provenance={
+        "Pvar": {"uses": ["target@t", "target@t-1"]},
+    },
+    prediction_horizon=1,
+    feature_availability={
+        "current_weather": 0,
+        "rain_lag1": -1,
+    },
+)
+
+print(scan)
+```
+
+For the one-call audit, the same metadata can be passed directly to `audit(...)`:
+
+```python
+report = audit(
+    X, y, estimator=model,
+    feature_provenance=feature_provenance,
+    engineered_features=engineered_features,
+    feature_availability=feature_availability,
+    prediction_horizon=1,
+)
+```
+
+`critical` findings mean that a feature is strongly evidenced or explicitly declared to contain the contemporaneous/future target. `high` findings indicate prediction-time look-ahead. `warning` findings indicate unverifiable lineage or availability. A clear automated scan is **not proof of absence of leakage**; arbitrary engineered transformations may require explicit provenance.
+
+## R02–R10 forensics (new in 1.2.0)
+
+SciMLRigor 1.2 extends the same forensic philosophy introduced for R01 to the remaining canonical stress tests. The public R01–R10 identifiers remain unchanged, but each test now emits structured sub-findings in `metadata["forensic_findings"]`.
+
+| Test | New forensic subtests |
+|---|---|
+| **R02** | nested optimism, parameter instability, outer-fold dispersion, declared selection scope |
+| **R03** | random-vs-group gap, group-size imbalance, outcome heterogeneity, worst-group holdout |
+| **R04** | forward validation, temporal trend, rolling-window sensitivity, target/covariate drift, timestamp order |
+| **R05** | exact duplicates, conflicting targets, deduplication sensitivity, near duplicates |
+| **R06** | global permutation plus group-preserving and temporal block-permutation nulls |
+| **R07** | joint identifier-only signal, per-field signal, target-pure repeated IDs, near-unique IDs |
+| **R08** | joint proxy removal, leave-one-feature-out ablation, scientifically defined feature-group ablation |
+| **R09** | leave-one-domain-out, worst-domain failure, score heterogeneity, covariate shift, pairwise transfer |
+| **R10** | Brier/ECE/slope/intercept for binary classification and RMSE/bias/slope/intercept for regression |
+
+Useful optional metadata/configuration now includes:
+
+```python
+report = audit(
+    X, y, estimator=model,
+    groups=subject_id,
+    time=date,
+    domains=site,
+    identifiers=metadata,
+    proxy_features=["suspected_proxy"],
+    proxy_groups={
+        "history": ["lag1", "lag12"],
+        "local": ["humidity", "temperature"],
+    },
+    selection_scope="fold_local",
+    temporal_gap=1,
+    permutation_block_size=12,
+)
+
+print(report.forensic_profile())
+print(report.forensic_findings())
+print(report.severe_forensic_findings(minimum="high"))
+```
+
+`not_evaluable` remains a valid scientific outcome when the metadata required for a stress test do not exist. Forensic findings are sensitivity diagnostics, not automatic declarations that a paper is invalid.
+
+
+## SciMLRigorBench (new in 1.3.0)
+
+SciMLRigor 1.3 adds a benchmark-hardened validation layer for the forensic R01–R10 suite. `scimlrigor.bench` starts from real-world datasets and injects controlled methodological failures with known type and severity. The same dataset and evaluation seed are retained across severity levels, so benchmark responses are paired against a severity-0 real-world control rather than compared across unrelated runs.
+
+```python
+from scimlrigor.bench import Benchmark
+
+run = Benchmark(
+    datasets=["breast_cancer", "diabetes"],
+    tests=[f"R{i:02d}" for i in range(1, 11)],
+    severity=[0, 2, 4],
+    random_state=42,
+    cv=2,
+    max_samples=140,
+).run()
+
+print(run.summary)
+print(run.by_code)
+```
+
+The built-in network-free anchors are `breast_cancer`, `diabetes`, `digits`, and `wine`. External real-world data can be supplied with `load_openml_dataset(...)`, `load_csv_dataset(...)`, or `from_arrays(...)`; importing SciMLRigor never downloads a dataset.
+
+The controlled injections cover target-derived leakage (R01), non-nested selection scope (R02), repeated-group shortcuts (R03), temporal concept drift/look-ahead stress (R04), duplicate contamination (R05), signal-destroying label permutation (R06), identifier shortcuts (R07), target-adjacent proxies (R08), domain-conditional concept shift (R09), and classification/regression calibration distortion (R10).
+
+The benchmark reports paired **injection recall**, **localization accuracy**, **severity monotonicity**, continuous diagnostic response, and **clean-control alert rate**. A clean-control alert on a real-world dataset is not automatically a false positive: the unmodified dataset can contain genuine group, temporal, domain, or calibration fragility. For that reason, `clean_control_alert_rate` is the preferred interpretation for heterogeneous real-world controls.
+
+The initial v1.3 smoke-validation protocol contains 60 paired runs across two real-world anchors and all R01–R10 families. Under that protocol, all expected severity-2/4 failures were detected and localized, with mean severity-response monotonicity of approximately 0.960. These are internal benchmark-hardening results, not a claim that SciMLRigor has been universally validated across all scientific domains. The machine-readable results and protocol are included under `benchmarks/scimlrigorbench_v1/`.
+
+The benchmark-hardening exercise also exposed and fixed a target-kind edge case in which high-cardinality integer-valued regression outcomes could be interpreted as multiclass targets. SciMLRigor 1.3 now treats high-cardinality numeric targets conservatively as regression while preserving ordinary low-cardinality multiclass behavior.
+
+CLI smoke benchmark:
+
+```bash
+scimlrigor bench --datasets breast_cancer,diabetes --tests R01,R05,R07,R08 --severity 0,4
+```
+
+## External-anchor benchmarking (new in 1.4.0)
+
+SciMLRigor 1.4 adds a second benchmark layer for natural datasets with real temporal, domain, identifier, engineered-feature, or reliability structure. Unlike controlled failure injection, external-anchor runs do **not** assume that every alert is a true positive or every non-alert is a true negative. Only independently curated structural expectations are scored; all other findings remain descriptive.
+
+```python
+from scimlrigor.bench import (
+    ExternalBenchmark,
+    load_rainfall_workbook,
+    load_hydraulic_zip,
+    load_ai4i_csv,
+)
+
+rain = load_rainfall_workbook("Thessaloniki_monthly_mean.xlsx")
+run = ExternalBenchmark(
+    [rain],
+    tests={rain.name: ["R01", "R04", "R08", "R10"]},
+    cv=3,
+).run()
+
+print(run.summary)
+print(run.results)
+```
+
+The initial 1.4.0 external-anchor layer executed 10 R-test runs across three anchors: a real Thessaloniki rainfall time series, experimentally obtained UCI hydraulic-condition-monitoring data, and the synthetic-but-industry-realistic UCI AI4I 2020 dataset. All 10 runs completed without execution error. Two narrow structural expectations were curated independently of model performance, and both were detected/localized. This is an initial external validation layer, not a universal sensitivity/specificity claim. Exact results and limitations are in `VALIDATION_v1.4.0.md` and `benchmarks/scimlrigorbench_v2/`.
+
+## Benchmark-driven hardening (new in 1.5.0)
+
+SciMLRigor 1.5 uses benchmark design to identify blind spots in the auditing framework itself. Two consequential upgrades resulted. First, R01 can detect near-deterministic targets assembled from pairs of predictors rather than only single-column target transforms. Second, R02/R04 now support grouped temporal evaluation for panel data whose local time axis restarts within subject, engine, patient, site, or other repeated unit.
+
+```python
+from scimlrigor.bench import (
+    load_bike_sharing_csv,
+    load_uci_har_directory,
+    load_arcene_directory,
+    load_cmapss_zip,
+)
+
+# Safe-by-default Bike Sharing loader: target components are excluded.
+bike = load_bike_sharing_csv("day.csv")
+
+# Explicit forensic mode intentionally retains casual + registered so R01
+# can validate detection of cnt = casual + registered.
+bike_forensic = load_bike_sharing_csv(
+    "day.csv", include_target_components=True
+)
+
+# Panel data: C-MAPSS supplies engine unit as groups and cycle as local time.
+cmapss = load_cmapss_zip("CMAPSSData.zip", dataset_id=1)
+```
+
+`leakage_scan(..., groups=..., time=...)` now computes target-history formulas within group, and `GroupedTemporalForwardSplit` is selected automatically by R04 when both group and time metadata are available. R02 nested tuning uses the same panel-aware chronology in its outer and inner folds.
+
+New UCI HAR, ARCENE, C-MAPSS and Bike Sharing loaders are format-fixture validated in 1.5.0. Their full source datasets are deliberately labeled **anchor-ready** rather than externally validated unless an end-to-end source-backed run has actually been executed. The executed external layer remains the 10 runs over rainfall, UCI hydraulic and AI4I, rerun under the 1.5.0 codebase. See `VALIDATION_v1.5.0.md` and `benchmarks/scimlrigorbench_v3/`.
+
+## Benchmark evidence hardening (new in 1.5.1)
+
+SciMLRigor 1.5.1 adds `TemporalBlockForwardSplit` for repeated/coarse timestamps and finalizes source-ready v3 protocols for UCI HAR, ARCENE, Bike Sharing, NASA C-MAPSS, and ACS/Folktables. The controlled 60-run benchmark and the three previously source-backed external anchors (Thessaloniki rainfall, UCI Hydraulic Condition Monitoring, and UCI AI4I 2020) were rerun under the 1.5.1 engine. Evidence tiers are recorded in `benchmarks/scimlrigorbench_v3/evidence_status.csv`; protocol validation is never relabeled as source-backed execution.
+
+## Core quantities
+
+For a higher-is-better metric:
+
+**Evaluation Optimism Gap**
+
+EOG = baseline_score - stress_score
+
+**Null-centered Rigor Survival**
+
+RS = (stress_score - null_score) / (baseline_score - null_score)
+
+RS estimates the proportion of predictive signal above the empirical null that remains under the stress-test evaluation design.
+
+## Status
+
+SciMLRigor is research software under active development. Numerical stress-test outputs should be interpreted as sensitivity analyses rather than automatic declarations of methodological failure.
+
+
+## Full R01-R06 audit
+
+```python
+from sklearn.feature_selection import SelectKBest, f_classif
+from sklearn.linear_model import LogisticRegression
+from scimlrigor import RigorAudit
+
+audit = RigorAudit(
+    estimator=LogisticRegression(max_iter=2000),
+    scoring="roc_auc",
+    cv=5,
+    inner_cv=3,
+    n_permutations=200,
+    random_state=42,
+    param_grid={"C": [0.01, 0.1, 1.0, 10.0]}
+)
+
+report = audit.fit(
+    X,
+    y,
+    groups=patient_id,
+    time=observation_date,
+    preprocessor=SelectKBest(f_classif, k=10)
+).run()
+
+print(report.summary())
+```
+
+R01 intentionally compares a globally fitted preprocessing arm with a
+fold-contained `Pipeline` arm. The globally fitted arm is a counterfactual
+stress-test comparator and should not be used as the recommended evaluation
+workflow.
+
+
+## Benchmark Suite v1
+
+Version 0.3.0 includes a controlled synthetic benchmark suite covering duplicate contamination, group dependence, temporal drift, target-proxy strength, and domain shift. The suite evaluates six severity levels across five random seeds per scenario and reports severity-response behavior for EOG and RS.
+
+```bash
+python benchmarks/suite_v1/run_suite.py
+```
+
+
+## Benchmark Suite v2
+
+Version 0.4.0 adds a factorial publication-oriented validation suite that varies sample size, class prevalence, estimator family, random seed, and injected methodological severity across five failure modes.
+
+```bash
+python benchmarks/suite_v2/run_suite.py
+```
+
+
+## Fragility ranking and reproducibility
+
+SciMLRigor v0.4 can rank completed EOG-producing stress tests:
+
+```python
+report.fragility_ranking()
+report.primary_fragility()
+```
+
+It also stores an environment and evaluation manifest:
+
+```python
+report.manifest()
+```
+
+The manifest records Python, NumPy, pandas, scikit-learn, estimator class, metric, cross-validation settings, random seed, and permutation count.
+
+
+## External validation layer
+
+SciMLRigor v0.5 adds:
+
+- a genuine four-center UCI Heart Disease loader for R09,
+- a network-free real-world validation suite based on scikit-learn/statsmodels datasets,
+- a comparator registry and explicit protocol separating documented coverage from empirical comparator execution.
+
+```python
+from scimlrigor import comparator_environment
+print(comparator_environment())
+```
+
+The UCI benchmark does not bundle the data in the wheel; it reads the official CC BY 4.0 dataset at runtime.
+
+
+## Stable release status
+
+`1.5.2` preserves the 1.x API, retains the R01–R10 forensic layers, controlled failure-injection benchmark, and natural external-anchor validation, while adding machine-readable evidence grading and preserving the earlier hardening changes. The software has passed unit, synthetic, factorial, and real-world execution checks, while the accompanying manuscript deliberately reserves empirical comparator-superiority claims until a version-pinned comparator benchmark is executed.
+
+
+## Publication uncertainty analyses
+
+Release candidate 2 adds:
+- 5,000-resample bootstrap uncertainty intervals for Benchmark Suite v2 severity–EOG correlations and maximum-severity EOG;
+- 12-seed repeatability analyses for the real-world EOG demonstrations;
+- bootstrap intervals for mean real-world EOG across those repeated CV seeds.
+
+These analyses strengthen the manuscript's construct-validity and repeatability evidence without changing the frozen 1.x public API.
+
+## Evidence grading for external anchors (1.5.2)
+
+SciMLRigorBench records evidence strength separately from model findings. Use `tag_evidence` to declare provenance explicitly:
+
+```python
+from scimlrigor.bench import tag_evidence
+
+anchor = tag_evidence(
+    anchor,
+    "A",
+    provider="UCI Machine Learning Repository",
+    status="source_backed_executed",
+    reference="https://doi.org/10.24432/...",
+)
+```
+
+- **Tier A**: authoritative/original source snapshot executed end-to-end.
+- **Tier B**: verified mirror executed and cross-checked against an authoritative source description.
+- **Tier C**: format-faithful fixture/protocol validation; not external validation.
+- **Tier P**: protocol prepared but execution is pending or the provider is unavailable.
+
+Evidence tier is not a severity score and does not imply that an alert is true or false. It describes how strongly the benchmark input and execution provenance support the validation claim.

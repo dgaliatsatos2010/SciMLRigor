@@ -1,0 +1,43 @@
+Test,Forensic subtest,New capability
+R02,R02a,Nested versus non-nested selection optimism
+R02,R02b,Hyperparameter stability across outer folds
+R02,R02c,Outer-fold dispersion and worst-fold diagnostics
+R02,R02d,Selection-scope provenance
+R03,R03a,Group-disjoint performance gap
+R03,R03b,Group-size imbalance
+R03,R03c,Between-group target heterogeneity
+R03,R03d,Worst-group leave-one-group-out performance
+R03,R03e,Singleton-group warning
+R04,R04a,Forward temporal performance gap
+R04,R04b,Later-fold performance trend
+R04,R04c,Rolling-versus-expanding window sensitivity
+R04,R04d,Target drift
+R04,R04e,Covariate drift
+R04,R04f,Timestamp order and duplicates
+R05,R05a,Conflicting-target exact duplicates
+R05,R05b,Duplicate prevalence and cluster size
+R05,R05c,Deduplication sensitivity
+R05,R05d,Near-duplicate concentration
+R05,R05e,Near-duplicate target discordance
+R06,R06a,Global permutation null
+R06,R06b,Group-preserving permutation null
+R06,R06c,Temporal block-preserving permutation null
+R07,R07a,Joint identifier-only signal
+R07,R07b,Per-identifier signal
+R07,R07c,Repeated target-pure identifiers
+R07,R07d,Near-unique identifier warning
+R07,R07e,Identifier-group equivalence
+R08,R08a,Headline proxy/feature ablation
+R08,R08b,Single-feature ablation
+R08,R08c,Named feature-group ablation
+R08,R08d,Joint time/group design note
+R09,R09a,Leave-one-domain-out transport gap
+R09,R09b,Worst-domain collapse
+R09,R09c,Domain-score heterogeneity
+R09,R09d,Domain covariate shift
+R09,R09e,Skipped-domain warning
+R10,R10a,Calibration/reliability degradation
+R10,R10b,Calibration slope stability
+R10,R10c,Calibration intercept or regression bias
+R10,R10d,Expected calibration error for binary classification
+R10,R10e,Multiple strict reliability designs

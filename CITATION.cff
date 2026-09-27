@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use SciMLRigor in research, please cite SciMLRigor 1.5.2 and the associated archival DOI when available."
+title: "SciMLRigor: Experimental Integrity Stress Testing for Machine-Learning Research"
+type: software
+authors:
+  - family-names: "Galiatsatos"
+    given-names: "Dimitrios"
+version: 1.5.2
+date-released: 2026-09-15
+license: MIT
